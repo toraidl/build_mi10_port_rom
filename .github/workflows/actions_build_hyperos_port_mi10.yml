@@ -1,0 +1,101 @@
+name: actions_build_hyperos_port_mi10
+on:
+  workflow_dispatch:
+    inputs:
+      STOCK_URL:
+        description: "待操作的底包/xiaomi.eu底包下载地址 | BASEROM DIRECT DOWNLOAD LINK(XIAOMI.EU or CN OFFICIAL ROM)"
+        required: true
+        default: https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS1.0.3.0.TJBCNXM/miui_UMI_OS1.0.3.0.TJBCNXM_ea86eb9a62_13.0.zip
+      PORT_URL:
+        description: "待操作的移植包下载地址 | PORTROM DIRECT DOWNLOAD LINK(XIAOMI.EU OR CN OFFICIAL ROM)"
+        required: true
+        default: https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS1.0.24.4.15.DEV/miui_THOR_OS1.0.24.4.15.DEV_1a7cf04581_14.0.zip
+      PACK_TYPE:
+        description: "打包类型（EXT/EROFS) | PACKING TYPE(EXT/EROFS), EROFS BY DEFAULT"
+        default: EROFS
+        type: choice
+        options:
+        - EROFS
+        - EXT
+        required: true
+      ENCRYPTION:
+        description: "是否解密data分区(TRUE/FALSE)，默认加密 | FBE DECRYPTION OR NOT, FBE ENABLED BY DEFAULT"
+        default: FALSE
+        required: false
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 1. 最大化并挂载构建空间 | MAXIMIZE BUILD SPACE
+        uses: easimon/maximize-build-space@master
+        with:
+          swap-size-mb: 8192
+          root-reserve-mb: 4096
+          temp-reserve-mb: 4096
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+      - name: 2. 检出仓库文件 | CHECKOUT REPOSITORY
+        uses: actions/checkout@main
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: 3. 准备环境 | PREPARE ENVIRONMENT
+        run: |
+          sudo apt install python3 aria2 zip p7zip-full zipalign android-sdk-libsparse-utils xmlstarlet
+          sudo apt-get remove -y firefox zstd
+          curl https://rclone.org/install.sh | sudo bash
+          mkdir -p ~/.config/rclone/
+          echo "${{ secrets.RCLONE_TOKEN }}" > token.txt
+          base64 -d token.txt > ~/.config/rclone/rclone.conf
+      - name: 4. 开始移植 | START PORTING
+        run: |
+          git clone https://github.com/toraidl/hyperos_port.git -b test
+          cd hyperos_port
+          mkdir tmp
+          rclone sync -P onedrive:/ROM_FILES/ tmp/
+          zipfiles=$(find tmp -name "*.zip")
+          for file in $zipfiles; do
+            echo "Unzipping $file to devices folder" 
+            unzip -o $file -d devices
+          done
+          if [[ ${{ github.event.inputs.PACK_TYPE }} == "EROFS" ]]; then
+              sed -i "s/repack_with_ext4=true/repack_with_ext4=false/" bin/port_config
+          fi
+
+          if [[ ${{ github.event.inputs.ENCRYPTION }} == "TRUE" ]]; then
+              sed -i "s/remove_data_encryption=false/remove_data_encryption=true/" bin/port_config
+          fi
+          sudo timedatectl set-timezone Asia/Shanghai
+          java -version
+          python3 --version
+          ls -alR "$GITHUB_WORKSPACE"
+          sudo bash port.sh ${{ github.event.inputs.STOCK_URL }} ${{ github.event.inputs.PORT_URL }} 
+          sudo zip -jr config.zip build/portrom/images/config
+      - name: 5. 准备上传 | PREPARE UPLOADING
+        run: |
+          ROM_FILE=$(basename $(find "$GITHUB_WORKSPACE"/hyperos_port/out -name "*.zip"))
+          echo "ROM_FILE=$ROM_FILE" >>$GITHUB_ENV
+          OS_VERSION=$(echo $ROM_FILE | cut -d "_" -f3)
+          echo "OS_VERSION=$OS_VERSION" >>$GITHUB_ENV
+          mkdir -p "$GITHUB_WORKSPACE"/hyperos_port/GithubRelease
+          cd "$GITHUB_WORKSPACE"/hyperos_port/GithubRelease
+          sudo split -b 1536M -d "$GITHUB_WORKSPACE"/hyperos_port/out/$ROM_FILE $ROM_FILE
+          ls -al "$GITHUB_WORKSPACE"/hyperos_port/GithubRelease/
+      - name: 7.上传到OneDrive | PUSH ROM TO ONEDRIVE
+        run: |
+            rclone sync -P "$GITHUB_WORKSPACE"/hyperos_port/out/${{ env.ROM_FILE }} onedrive:/ROM/github-actions/$OS_VERSION
+            SHARE_LINK=$(rclone link onedrive:/ROM/github-actions/ --onedrive-link-scope anonymous)
+            touch file.log
+            echo -e "Onedrive下载链接 | Onedrive alternate download link: \n $SHARE_LINK" > file.log
+     
+      - name: 8. 上传到Github Release| UPLOAD ROM TO GITHUB RELEASAE
+        uses: ncipollo/release-action@main
+        with:
+          artifacts: ${{ github.workspace }}/hyperos_port/GithubRelease/*
+          name: ${{ env.OS_VERSION }}
+          tag: ${{ env.OS_VERSION }}
+          bodyFile: "${{ github.workspace }}/file.log"
+          allowUpdates: true
+          artifactErrorsFailBuild: true
