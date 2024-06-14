@@ -41,4 +41,4 @@ jobs:
             echo "Downloding $link"
             aria2c --max-download-limit=1024M --file-allocation=none -s10 -x10 -j10 $link
           done 
-          rclone sync -P "$GITHUB_WORKSPACE"/roms/* onedrive:/ROM/sourceforge/
+          rclone sync --include "*.zip" . onedrive:/ROM/sourceforge/
