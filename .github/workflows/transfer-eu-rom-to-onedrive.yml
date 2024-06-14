@@ -36,7 +36,7 @@ jobs:
           mkdir roms
           cd roms
           IFS=','
-          read -ra links <<< "$DOWNLOAD_URL"
+          read -ra links <<< {{ github.event.inputs.DOWNLOAD_URL }}
           for link in "${links[@]}"; do
             echo "Downloding $link"
             aria2c --max-download-limit=1024M --file-allocation=none -s10 -x10 -j10 $link
