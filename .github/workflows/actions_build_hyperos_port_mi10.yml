@@ -56,8 +56,8 @@ jobs:
           mkdir tmp
           rclone sync -P onedrive:/ROM_FILES/ tmp/
           mkdir -p devices/umi devices/cmi
-          cp -rfv tmp/BT*.zip device/umi
-          cp -rfv tmp/BT*.zip device/cmi
+          cp -rfv tmp/BT*.zip devices/umi
+          cp -rfv tmp/BT*.zip devices/cmi
           if [[ ${{ github.event.inputs.PACK_TYPE }} == "EROFS" ]]; then
               sed -i "s/repack_with_ext4=true/repack_with_ext4=false/" bin/port_config
           fi
