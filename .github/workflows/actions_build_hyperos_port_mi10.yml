@@ -55,11 +55,9 @@ jobs:
           cd hyperos_port
           mkdir tmp
           rclone sync -P onedrive:/ROM_FILES/ tmp/
-          zipfiles=$(find tmp -name "*.zip")
-          for file in $zipfiles; do
-            echo "Unzipping $file to devices folder" 
-            unzip -o $file -d devices
-          done
+          mkdir -p devices/umi devices/cmi
+          cp -rfv tmp/BT*.zip device/umi
+          cp -rfv tmp/BT*.zip device/cmi
           if [[ ${{ github.event.inputs.PACK_TYPE }} == "EROFS" ]]; then
               sed -i "s/repack_with_ext4=true/repack_with_ext4=false/" bin/port_config
           fi
