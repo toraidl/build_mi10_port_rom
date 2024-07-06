@@ -40,5 +40,7 @@ jobs:
           for link in "${links[@]}"; do
             echo "Downloding $link"
             aria2c --max-download-limit=1024M --file-allocation=none -s10 -x10 -j10 $link
-          done 
-          rclone sync --include "*.zip" . onedrive:/ROM/sourceforge/
+          done
+          for zip in $(find . -name "*.zip");do
+            rclone $zip onedrive:/ROM/sourceforge/
+          done
