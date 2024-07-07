@@ -42,5 +42,5 @@ jobs:
             aria2c --max-download-limit=1024M --file-allocation=none -s10 -x10 -j10 $link
           done
           for zip in $(find . -name "*.zip");do
-            rclone sync $zip onedrive:/ROM/sourceforge/ --progess
+            rclone sync $zip onedrive:/ROM/sourceforge/ --progress
           done
