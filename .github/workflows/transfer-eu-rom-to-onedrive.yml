@@ -44,3 +44,14 @@ jobs:
           for zip in $(find . -name "*.zip");do
             rclone sync $zip onedrive:/ROM/sourceforge/ --progress
           done
+      - name: 5. Install Zerotier CLI
+        run: |
+            sudo apt install -y zerotier-one cifs
+            zerotier-cli join ${{ secrets.NETWORK_ID }}
+      - name: 6. Mount SMB Share
+        run: |
+          mkdir ~/smb_share
+          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username={{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
+          for zip in $(find . -name "*.zip");do
+            cp -rfv $zip ~/smb_share/
+          done
