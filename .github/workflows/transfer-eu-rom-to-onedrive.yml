@@ -44,12 +44,24 @@ jobs:
           for zip in $(find . -name "*.zip");do
             rclone sync $zip onedrive:/ROM/sourceforge/ --progress
           done
-      - name: 5. Install Zerotier CLI
+      - name: ZeroTier
+        uses: zerotier/github-action@v1
+        with:
+          network_id: ${{ secrets.NETWORK_ID }}
+      - name: ping host
+        shell: bash
         run: |
-            sudo apt install -y zerotier-one cifs
-            zerotier-cli join ${{ secrets.NETWORK_ID }}
+          count=5
+          while ! ping -c 1 ${{ secrets.SMB_IP }} ; do
+          echo "waiting..." ;
+          sleep 1 ;
+          let count=count-1
+          done
+          echo "ping success"
       - name: 6. Mount SMB Share
         run: |
+          sudo apt update
+          sudo apt install cifs-utils -y
           mkdir ~/smb_share
           sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username={{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
           for zip in $(find . -name "*.zip");do
