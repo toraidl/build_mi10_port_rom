@@ -57,10 +57,8 @@ jobs:
           echo "ping success"
       - name: 6. 挂载SMB共享 | Mount SMB Share
         run: |
-          sudo apt update
-          sudo apt install cifs-utils -y
-          mkdir ~/smb_share
-          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username={{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
+          sudo mkdir ~/smb_share
+          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
           for zip in $(find . -name "*.zip");do
-            cp -rfv $zip ~/smb_share/
+            sudo cp -rfv $zip ~/smb_share/
           done
