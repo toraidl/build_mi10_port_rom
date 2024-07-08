@@ -55,10 +55,6 @@ jobs:
           let count=count-1
           done
           echo "ping success"
-      - name: 6. 挂载SMB共享 | Mount SMB Share
+      - name: 6. 传送测试 | Transfer test
         run: |
-          sudo mkdir ~/smb_share
-          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
-          for zip in $(find . -name "*.zip");do
-            sudo cp -rfv $zip ~/smb_share/
-          done
+          rclone sync onedrive:ROM_FILES/cas.zip smb:backup/test/ --progress
