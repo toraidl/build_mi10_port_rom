@@ -46,7 +46,7 @@ jobs:
         run: |
           sudo mkdir /mnt/smb_share
           sudo mount -t cifs -o username=$SMB_USERNAME,password=$SMB_PASSWORD //$SMB_IP/backup /mnt/smb_share
-          //sudo mount -t cifs //${{ secrets.SMB_IP }}/backup /mnt/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }},workgroup="WORKGROUP"
+          ##sudo mount -t cifs //${{ secrets.SMB_IP }}/backup /mnt/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }},workgroup="WORKGROUP"
           ls -al /mnt/smb_share/
           echo "hello" > test.txt
           sudo cp test.txt /mnt/smb_share/test.txt
