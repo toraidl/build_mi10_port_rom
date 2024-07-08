@@ -102,9 +102,14 @@ jobs:
           let count=count-1
           done
           echo "ping success"
-      - name: 8. 上传到SMB | PUSH ROM TO SMB
+      - name: 8. Mount SMB Share
         run: |
-            rclone sync -P "$GITHUB_WORKSPACE"/hyperos_port/out/${{ env.ROM_FILE }} smb:backup/ROM/port/github-cli/
+          sudo apt update
+          sudo apt-get install gcp -y
+          sudo mkdir ~/smb_share
+          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
+          sudo gcp -v "$GITHUB_WORKSPACE"/hyperos_port/out/${{ env.ROM_FILE }}  ~/smb_share/ROM/
+         
       - name: 9. 上传到OneDrive | PUSH ROM TO ONEDRIVE
         if:  ${{  github.event.inputs.ONEDRIVE == 'TRUE' }}
         run: |
