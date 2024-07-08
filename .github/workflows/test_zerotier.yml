@@ -42,6 +42,8 @@ jobs:
         run: |
           sudo apt update
           sudo apt install cifs-utils -y
-          mkdir ~/smb_share
-          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
-          ls -al ~/smb_share
+          sudo mkdir /mnt/smb_share
+          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup /mnt/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
+          ls -al /mnt/smb_share/
+          echo "hello" > test.txt
+          sudo cp test.txt /mnt/smb_share/test.txt
