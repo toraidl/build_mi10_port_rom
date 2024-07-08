@@ -1,0 +1,47 @@
+name: transfer_eu_rom_to_onedrive
+on:
+  workflow_dispatch:
+    inputs:
+      DOWNLOAD_URL:
+        description: "待转移的xiaomi.eu底包下载地址，多个通过逗号分隔"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 1. 最大化并挂载构建空间 | MAXIMIZE BUILD SPACE
+        uses: easimon/maximize-build-space@master
+        with:
+          swap-size-mb: 8192
+          root-reserve-mb: 4096
+          temp-reserve-mb: 4096
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+      - name: 2. 检出仓库文件 | CHECKOUT REPOSITORY
+        uses: actions/checkout@main
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: ZeroTier
+        uses: zerotier/github-action@v1
+        with:
+          network_id: ${{ secrets.NETWORK_ID }}
+      - name: ping host
+        shell: bash
+        run: |
+          count=5
+          while ! ping -c 1 ${{ secrets.SMB_IP }} ; do
+          echo "waiting..." ;
+          sleep 1 ;
+          let count=count-1
+          done
+          echo "ping success"
+      - name: 6. Mount SMB Share
+        run: |
+          sudo apt update
+          sudo apt install cifs-utils -y
+          mkdir ~/smb_share
+          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
+          ls -al ~/smb_share
