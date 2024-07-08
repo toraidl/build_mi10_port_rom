@@ -1,4 +1,4 @@
-name: transfer_eu_rom_to_onedrive
+name: test_zerotier
 on:
   workflow_dispatch:
     inputs:
@@ -24,11 +24,28 @@ jobs:
         with:
           ref: main
           fetch-depth: 1
-      - name: ZeroTier
+      - name: 3. 准备环境 | PREPARE ENVIRONMENT
+        run: |
+          sudo apt install aria2
+          curl https://rclone.org/install.sh | sudo bash
+          mkdir -p ~/.config/rclone/
+          echo "${{ secrets.RCLONE_TOKEN }}" > token.txt
+          base64 -d token.txt > ~/.config/rclone/rclone.conf
+      - name: 4. 下载 | START DOWNLOAD
+        run: |
+          mkdir roms
+          cd roms
+          IFS=','
+          read -ra links <<< ${{ github.event.inputs.DOWNLOAD_URL }}
+          for link in "${links[@]}"; do
+            echo "Downloding $link"
+            aria2c --max-download-limit=1024M --file-allocation=none -s10 -x10 -j10 $link
+          done
+      - name: 5. 安装 ZeroTier | Install Zerotier
         uses: zerotier/github-action@v1
         with:
           network_id: ${{ secrets.NETWORK_ID }}
-      - name: ping host
+      - name: 6. Ping测试 | ping host
         shell: bash
         run: |
           count=5
@@ -38,15 +55,12 @@ jobs:
           let count=count-1
           done
           echo "ping success"
-      - name: 6. Mount SMB Share
-        env:
-            SMB_IP: ${{ secrets.SMB_IP }}
-            SMB_USERNAME: ${{ secrets.SMB_USERNAME }}
-            SMB_PASSWORD: ${{ secrets.SMB_PASSWORD }}
+      - name: 6. 挂载SMB共享 | Mount SMB Share
         run: |
-          sudo mkdir /mnt/smb_share
-          sudo mount -t cifs -o username=$SMB_USERNAME,password=$SMB_PASSWORD //$SMB_IP/backup /mnt/smb_share
-          ##sudo mount -t cifs //${{ secrets.SMB_IP }}/backup /mnt/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }},workgroup="WORKGROUP"
-          ls -al /mnt/smb_share/
-          echo "hello" > test.txt
-          sudo cp test.txt /mnt/smb_share/test.txt
+          sudo apt update
+          sudo apt install cifs-utils -y
+          mkdir ~/smb_share
+          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username={{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
+          for zip in $(find . -name "*.zip");do
+            cp -rfv $zip ~/smb_share/
+          done
