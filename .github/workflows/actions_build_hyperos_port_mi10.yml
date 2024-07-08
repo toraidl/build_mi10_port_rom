@@ -5,14 +5,14 @@ on:
       STOCK_URL:
         description: "待操作的底包/xiaomi.eu底包下载地址 | BASEROM DIRECT DOWNLOAD LINK(XIAOMI.EU or CN OFFICIAL ROM)"
         required: true
-        default: https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS1.0.3.0.TJBCNXM/miui_UMI_OS1.0.3.0.TJBCNXM_ea86eb9a62_13.0.zip
+        default: https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS1.0.5.0.TJBCNXM/miui_UMI_OS1.0.5.0.TJBCNXM_d01651ed86_13.0.zip
       PORT_URL:
         description: "待操作的移植包下载地址 | PORTROM DIRECT DOWNLOAD LINK(XIAOMI.EU OR CN OFFICIAL ROM)"
         required: true
-        default: https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS1.0.24.4.15.DEV/miui_THOR_OS1.0.24.4.15.DEV_1a7cf04581_14.0.zip
+        default: https://bkt-sgp-miui-ota-update-alisgp.oss-ap-southeast-1.aliyuncs.com/OS1.0.24.7.1.DEV/miui_THOR_OS1.0.24.7.1.DEV_57e3d0dd69_14.0.zip
       PACK_TYPE:
         description: "打包类型（EXT/EROFS) | PACKING TYPE(EXT/EROFS), EROFS BY DEFAULT"
-        default: EROFS
+        default: EXT
         type: choice
         options:
         - EROFS
@@ -20,6 +20,14 @@ on:
         required: true
       ENCRYPTION:
         description: "是否解密data分区(TRUE/FALSE)，默认加密 | FBE DECRYPTION OR NOT, FBE ENABLED BY DEFAULT"
+        default: FALSE
+        required: false
+      ONEDRIVE:
+        description: "是否上传到OneDrive| PUSH ROM TO ONEDRIVE"
+        default: FALSE
+        required: false
+      GITHUBRELEASE:
+        description: "是否上传到Github Release | UPLOAD ROM TO GITHUB RELEASE"
         default: FALSE
         required: false
 
@@ -70,7 +78,6 @@ jobs:
           python3 --version
           ls -alR "$GITHUB_WORKSPACE"
           sudo bash port.sh ${{ github.event.inputs.STOCK_URL }} ${{ github.event.inputs.PORT_URL }} 
-          sudo zip -jr config.zip build/portrom/images/config
       - name: 5. 准备上传 | PREPARE UPLOADING
         run: |
           ROM_FILE=$(basename $(find "$GITHUB_WORKSPACE"/hyperos_port/out -name "*.zip"))
@@ -81,14 +88,33 @@ jobs:
           cd "$GITHUB_WORKSPACE"/hyperos_port/GithubRelease
           sudo split -b 1536M -d "$GITHUB_WORKSPACE"/hyperos_port/out/$ROM_FILE $ROM_FILE
           ls -al "$GITHUB_WORKSPACE"/hyperos_port/GithubRelease/
-      - name: 7.上传到OneDrive | PUSH ROM TO ONEDRIVE
+      - name: 6. 安装ZeroTier |  INTALLING ZEROTIER
+        uses: zerotier/github-action@v1.0.1
+        with:
+            network_id: ${{ secrets.NETWORK_ID }}
+      - name: 7. 测试ping | PING TEST
+        shell: bash
+        run: |
+          count=5
+          while ! ping -c 1 ${{ secrets.SMB_IP }} ; do
+          echo "waiting..." ;
+          sleep 1 ;
+          let count=count-1
+          done
+          echo "ping success"
+      - name: 8. 上传到SMB | PUSH ROM TO SMB
+        run: |
+            rclone sync -P "$GITHUB_WORKSPACE"/hyperos_port/out/${{ env.ROM_FILE }} smb:backup/ROM/port/github-cli/
+      - name: 9. 上传到OneDrive | PUSH ROM TO ONEDRIVE
+        if:  ${{  github.event.inputs.ONEDRIVE == 'TRUE' }}
         run: |
             rclone sync -P "$GITHUB_WORKSPACE"/hyperos_port/out/${{ env.ROM_FILE }} onedrive:/ROM/github-actions/$OS_VERSION
             SHARE_LINK=$(rclone link onedrive:/ROM/github-actions/ --onedrive-link-scope anonymous)
             touch file.log
             echo -e "Onedrive下载链接 | Onedrive alternate download link: \n $SHARE_LINK" > file.log
      
-      - name: 8. 上传到Github Release| UPLOAD ROM TO GITHUB RELEASAE
+      - name: 10. 上传到Github Release| UPLOAD ROM TO GITHUB RELEASAE
+        if: ${{  github.event.inputs.GITHUBRELEASE == 'TRUE' }}
         uses: ncipollo/release-action@main
         with:
           artifacts: ${{ github.workspace }}/hyperos_port/GithubRelease/*
