@@ -39,11 +39,14 @@ jobs:
           done
           echo "ping success"
       - name: 6. Mount SMB Share
+        env:
+            SMB_IP: ${{ secrets.SMB_IP }}
+            SMB_USERNAME: ${{ secrets.SMB_USERNAME }}
+            SMB_PASSWORD: ${{ secrets.SMB_PASSWORD }}
         run: |
-          sudo apt update
-          sudo apt install cifs-utils -y
           sudo mkdir /mnt/smb_share
-          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup /mnt/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
+          sudo mount -t cifs -o username=$SMB_USERNAME,password=$SMB_PASSWORD //$SMB_IP/backup /mnt/smb_share
+          //sudo mount -t cifs //${{ secrets.SMB_IP }}/backup /mnt/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }},workgroup="WORKGROUP"
           ls -al /mnt/smb_share/
           echo "hello" > test.txt
           sudo cp test.txt /mnt/smb_share/test.txt
