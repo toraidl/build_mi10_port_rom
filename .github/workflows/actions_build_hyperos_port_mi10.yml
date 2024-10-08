@@ -51,9 +51,8 @@ jobs:
           fetch-depth: 1
       - name: 3. 准备环境 | PREPARE ENVIRONMENT
         run: |
-          sudo apt install python3 aria2 zip p7zip-full zipalign android-sdk-libsparse-utils xmlstarlet
+          sudo apt install python3 aria2 zip p7zip-full zipalign android-sdk-libsparse-utils xmlstarlet python-protobuf
           sudo apt-get remove -y firefox zstd
-          sudo pip install protobuf
           curl https://rclone.org/install.sh | sudo bash
           mkdir -p ~/.config/rclone/
           echo "${{ secrets.RCLONE_TOKEN }}" > token.txt
