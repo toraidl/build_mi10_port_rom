@@ -59,8 +59,9 @@ jobs:
           base64 -d token.txt > ~/.config/rclone/rclone.conf
       - name: 4. 开始移植 | START PORTING
         run: |
-          git clone https://github.com/toraidl/hyperos_port.git -b ext
+          git clone https://github.com/toraidl/hyperos_port.git -b releasetools
           cd hyperos_port
+          sudo chmod -R a+x . 
           mkdir tmp
           rclone sync -P onedrive:/ROM_FILES/ tmp/
           mkdir -p devices/umi devices/cmi
@@ -69,7 +70,7 @@ jobs:
           if [[ ${{ github.event.inputs.PACK_TYPE }} == "EROFS" ]]; then
               sed -i "s/repack_with_ext4=true/repack_with_ext4=false/" bin/port_config
           fi
-
+          echo "nfc_fix_type=a14" >> bin/port_config
           if [[ ${{ github.event.inputs.ENCRYPTION }} == "TRUE" ]]; then
               sed -i "s/remove_data_encryption=false/remove_data_encryption=true/" bin/port_config
           fi
