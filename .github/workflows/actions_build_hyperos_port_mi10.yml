@@ -53,6 +53,7 @@ jobs:
         run: |
           sudo apt install python3 aria2 zip p7zip-full zipalign android-sdk-libsparse-utils xmlstarlet
           sudo apt-get remove -y firefox zstd
+          sudo pip install protobuf
           curl https://rclone.org/install.sh | sudo bash
           mkdir -p ~/.config/rclone/
           echo "${{ secrets.RCLONE_TOKEN }}" > token.txt
@@ -81,7 +82,7 @@ jobs:
           sudo bash port.sh ${{ github.event.inputs.STOCK_URL }} ${{ github.event.inputs.PORT_URL }} 
       - name: 5. 准备上传 | PREPARE UPLOADING
         run: |
-          ROM_FILE=$(basename $(find "$GITHUB_WORKSPACE"/hyperos_port/out -name "*.zip"))
+          ROM_FILE=$(basename $(find "$GITHUB_WORKSPACE"/hyperos_port/out -name "*.zip" ! -name "target-files.zip"))
           echo "ROM_FILE=$ROM_FILE" >>$GITHUB_ENV
           OS_VERSION=$(echo $ROM_FILE | cut -d "_" -f3)
           echo "OS_VERSION=$OS_VERSION" >>$GITHUB_ENV
