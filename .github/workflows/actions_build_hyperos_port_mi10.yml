@@ -53,6 +53,7 @@ jobs:
         run: |
           sudo apt install python3 aria2 zip p7zip-full zipalign android-sdk-libsparse-utils xmlstarlet
           pip install protobuf
+          pip show protobuf
           sudo apt-get remove -y firefox zstd
           curl https://rclone.org/install.sh | sudo bash
           mkdir -p ~/.config/rclone/
@@ -78,7 +79,6 @@ jobs:
           sudo timedatectl set-timezone Asia/Shanghai
           java -version
           python3 --version
-          ls -alR "$GITHUB_WORKSPACE"
           sudo bash port.sh ${{ github.event.inputs.STOCK_URL }} ${{ github.event.inputs.PORT_URL }} 
       - name: 5. 准备上传 | PREPARE UPLOADING
         run: |
