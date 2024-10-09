@@ -53,6 +53,8 @@ jobs:
         run: |
           sudo apt install python3 aria2 zip p7zip-full zipalign android-sdk-libsparse-utils xmlstarlet
           pip install protobuf
+          pip install google
+          pip install google-cloud
           pip show protobuf
           sudo apt-get remove -y firefox zstd
           curl https://rclone.org/install.sh | sudo bash
