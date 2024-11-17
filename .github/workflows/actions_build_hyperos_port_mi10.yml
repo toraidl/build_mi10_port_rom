@@ -81,6 +81,7 @@ jobs:
           sudo timedatectl set-timezone Asia/Shanghai
           java -version
           python3 --version
+          sed -i "s/pack_method=.*/pack_method=aosp/" port.sh
           sudo bash port.sh ${{ github.event.inputs.STOCK_URL }} ${{ github.event.inputs.PORT_URL }} 
       - name: 5. 准备上传 | PREPARE UPLOADING
         run: |
@@ -92,28 +93,7 @@ jobs:
           cd "$GITHUB_WORKSPACE"/hyperos_port/GithubRelease
           sudo split -b 1536M -d "$GITHUB_WORKSPACE"/hyperos_port/out/$ROM_FILE $ROM_FILE
           ls -al "$GITHUB_WORKSPACE"/hyperos_port/GithubRelease/
-      - name: 6. 安装ZeroTier |  INTALLING ZEROTIER
-        uses: zerotier/github-action@v1.0.1
-        with:
-            network_id: ${{ secrets.NETWORK_ID }}
-      - name: 7. 测试ping | PING TEST
-        shell: bash
-        run: |
-          count=5
-          while ! ping -c 1 ${{ secrets.SMB_IP }} ; do
-          echo "waiting..." ;
-          sleep 1 ;
-          let count=count-1
-          done
-          echo "ping success"
-      - name: 8. Mount SMB Share
-        run: |
-          sudo apt update
-          sudo apt-get install gcp -y
-          sudo mkdir ~/smb_share
-          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username=${{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
-          sudo gcp -v "$GITHUB_WORKSPACE"/hyperos_port/out/${{ env.ROM_FILE }}  ~/smb_share/ROM/
-         
+     
       - name: 9. 上传到OneDrive | PUSH ROM TO ONEDRIVE
         if:  ${{  github.event.inputs.ONEDRIVE == 'TRUE' }}
         run: |
