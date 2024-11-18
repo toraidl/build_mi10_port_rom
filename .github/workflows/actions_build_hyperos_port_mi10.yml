@@ -82,6 +82,8 @@ jobs:
           java -version
           python3 --version
           sed -i "s/pack_method=.*/pack_method=aosp/" port.sh
+          mkdir -p tmp/build/
+          export TMPDIR=tmp/build/
           sudo bash port.sh ${{ github.event.inputs.STOCK_URL }} ${{ github.event.inputs.PORT_URL }} 
       - name: 5. 准备上传 | PREPARE UPLOADING
         run: |
