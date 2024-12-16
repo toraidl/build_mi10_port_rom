@@ -36,32 +36,27 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: 1. 最大化并挂载构建空间 | MAXIMIZE BUILD SPACE
-        uses: easimon/maximize-build-space@master
-        with:
-          swap-size-mb: 8192
-          root-reserve-mb: 4096
-          temp-reserve-mb: 4096
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
+        uses: rokibhasansagar/slimhub_actions@main
+        
       - name: 2. 检出仓库文件 | CHECKOUT REPOSITORY
         uses: actions/checkout@main
         with:
           ref: main
           fetch-depth: 1
-      - name: 3. 准备环境 | PREPARE ENVIRONMENT
+      - name: 3. 设置Swap空间 | Setup Swap Size
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 12
+          
+      - name: 4. 准备环境 | PREPARE ENVIRONMENT
         run: |
           sudo apt install python3 aria2 zip p7zip-full zipalign android-sdk-libsparse-utils xmlstarlet
-          pip install protobuf
-          pip install google
-          pip install google-cloud
-          pip show protobuf
           sudo apt-get remove -y firefox zstd
           curl https://rclone.org/install.sh | sudo bash
           mkdir -p ~/.config/rclone/
           echo "${{ secrets.RCLONE_TOKEN }}" > token.txt
           base64 -d token.txt > ~/.config/rclone/rclone.conf
-      - name: 4. 开始移植 | START PORTING
+      - name: 5. 开始移植 | START PORTING
         run: |
           git clone https://github.com/toraidl/hyperos_port.git -b test
           cd hyperos_port
