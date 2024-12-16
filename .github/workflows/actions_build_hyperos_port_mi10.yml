@@ -69,16 +69,12 @@ jobs:
           if [[ ${{ github.event.inputs.PACK_TYPE }} == "EROFS" ]]; then
               sed -i "s/repack_with_ext4=true/repack_with_ext4=false/" bin/port_config
           fi
-          echo "nfc_fix_type=a14" >> bin/port_config
           if [[ ${{ github.event.inputs.ENCRYPTION }} == "TRUE" ]]; then
               sed -i "s/remove_data_encryption=false/remove_data_encryption=true/" bin/port_config
           fi
           sudo timedatectl set-timezone Asia/Shanghai
-          java -version
-          python3 --version
           sed -i "s/pack_method=.*/pack_method=aosp/" port.sh
-          mkdir -p tmp/build/
-          export TMPDIR=tmp/build/
+          sudo bash setup.sh
           sudo bash port.sh ${{ github.event.inputs.STOCK_URL }} ${{ github.event.inputs.PORT_URL }} 
       - name: 5. 准备上传 | PREPARE UPLOADING
         run: |
