@@ -41,29 +41,21 @@ jobs:
             echo "Downloding $link"
             aria2c --max-download-limit=1024M --file-allocation=none -s10 -x10 -j10 $link
           done
-          for zip in $(find . -name "*.zip");do
-            rclone sync $zip onedrive:/ROM/sourceforge/ --progress
-          done
-      - name: ZeroTier
-        uses: zerotier/github-action@v1
+      - name: Find ROM File
+        id: find_rom
+        run: |
+          FILE=$(find roms/ -type f -name "*.zip" | head -n 1)
+          echo "rom_file=$FILE" >> $GITHUB_ENV
+          echo "找到ROM文件: $FILE"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          network_id: ${{ secrets.NETWORK_ID }}
-      - name: ping host
-        shell: bash
-        run: |
-          count=5
-          while ! ping -c 1 ${{ secrets.SMB_IP }} ; do
-          echo "waiting..." ;
-          sleep 1 ;
-          let count=count-1
-          done
-          echo "ping success"
-      - name: 6. Mount SMB Share
-        run: |
-          sudo apt update
-          sudo apt install cifs-utils -y
-          mkdir ~/smb_share
-          sudo mount -t cifs //${{ secrets.SMB_IP }}/backup ~/smb_share -o username={{ secrets.SMB_USERNAME }},password=${{ secrets.SMB_PASSWORD }}
-          for zip in $(find . -name "*.zip");do
-            cp -rfv $zip ~/smb_share/
-          done
+          tag_name: ${{ github.ref_name }}
+          name: "EU ROM ${{ github.ref_name }}"
+          body: |
+            🚀 自动上传的 EU ROM
+            文件名: ${{ env.rom_file }}
+          files: ${{ env.rom_file }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
