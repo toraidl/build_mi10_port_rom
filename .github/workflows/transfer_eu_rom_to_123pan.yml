@@ -1,0 +1,56 @@
+name: transfer_eu_rom_to_123pan
+on:
+  workflow_dispatch:
+    inputs:
+      DOWNLOAD_URL:
+        description: "待转移的xiaomi.eu底包下载地址，多个通过逗号分隔"
+        required: true
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: 1. 最大化并挂载构建空间 | MAXIMIZE BUILD SPACE
+        uses: easimon/maximize-build-space@master
+        with:
+          swap-size-mb: 8192
+          root-reserve-mb: 4096
+          temp-reserve-mb: 4096
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+
+      - name: 2. 检出仓库文件 | CHECKOUT REPOSITORY
+        uses: actions/checkout@main
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: 3. 准备环境 | PREPARE ENVIRONMENT
+        run: |
+          sudo apt install aria2
+          curl https://rclone.org/install.sh | sudo bash
+          mkdir -p ~/.config/rclone/
+          # 解码 Rclone 配置
+          # 请确保 secrets.RCLONE_TOKEN 是包含 [123pan] 配置的 rclone.conf 文件的 Base64 编码字符串
+          echo "${{ secrets.RCLONE_TOKEN }}" > token.txt
+          base64 -d token.txt > ~/.config/rclone/rclone.conf
+
+      - name: 4. 下载并转移 | START DOWNLOAD & TRANSFER
+        run: |
+          mkdir roms
+          cd roms
+          IFS=','
+          read -ra links <<< "${{ github.event.inputs.DOWNLOAD_URL }}"
+          for link in "${links[@]}"; do
+            echo "Downloading $link"
+            # 增加了 -c 参数支持断点续传
+            aria2c --max-download-limit=1024M --file-allocation=none -s10 -x10 -j10 -c "$link"
+          done
+          cd ..
+          
+          echo "正在通过 Rclone 同步到 123pan..."
+          # 使用 sync 将 roms 文件夹的内容同步到 123pan 的根目录
+          # 警告：sync 模式是“镜像”。如果 123pan 根目录下有其他文件，而 roms 文件夹里没有，它们会被删除！
+          # 如果不想删除网盘原有文件，请将 sync 改为 copy
+          rclone sync roms/ 123pan:/ --progress
