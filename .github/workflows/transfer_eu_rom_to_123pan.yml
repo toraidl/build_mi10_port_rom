@@ -53,4 +53,4 @@ jobs:
           # 使用 sync 将 roms 文件夹的内容同步到 123pan 的根目录
           # 警告：sync 模式是“镜像”。如果 123pan 根目录下有其他文件，而 roms 文件夹里没有，它们会被删除！
           # 如果不想删除网盘原有文件，请将 sync 改为 copy
-          rclone sync roms/ 123pan:/ --progress
+          rclone sync roms/ 123pan:/eu_rom/ --progress
